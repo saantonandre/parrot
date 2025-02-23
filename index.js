@@ -25,24 +25,22 @@ async function main() {
     const content = msg.text();
     switch (type) {
       case "log": {
-        console.log(content);
         handleCommands(content);
-        // speechData.push(content);
         return;
       }
       case "info": {
-        console.log(`${type}: ${content}`);
         if (content === "RESTART_SPEECH") {
           startSpeechRecognition(page);
         }
         return;
       }
-      default: {
-        console.log(`${type}: ${content}`);
+      case "warn": {
+        console.log(content)
         return;
       }
     }
   });
   await startSpeechRecognition(page);
+  console.log("Program: READY")
 }
 main();

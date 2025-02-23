@@ -11,7 +11,7 @@ export const speak = (_text) => {
   return page.evaluate(async (text) => {
     const synth = window.speechSynthesis;
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang="it"
+    utter.lang="en-GB"
     synth.speak(utter);
   }, _text);
 };

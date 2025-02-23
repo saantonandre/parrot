@@ -1,13 +1,16 @@
 import fs from "fs";
-// import {speak} from "./speechSynthesis.js";
+import { speak } from "./speechSynthesis.js";
 
 const SANDBOX_FOLDER = "./sandbox/";
+let active = true;
 const commands = {
-  "crea file": createFile,
-  "elimina": deleteFile,
-  "metti dentro": (params) => {
-    const [fileName, ...rest] = params.split(" ");
-    createFile(fileName.trim(), rest.join(" ").trim());
+  stop: () => {
+    console.log("Program: STOP");
+    active = false;
+  },
+  start: () => {
+    console.log("Program: START");
+    active = true;
   },
 };
 
@@ -21,21 +24,15 @@ export const handleCommands = (_sentence) => {
   }
   const sentence = _sentence.toLocaleLowerCase().trim();
   for (const key in commands) {
-    if (sentence.startsWith(key)) {
+    if (sentence === key) {
       const param = sentence.split(key)[1].trim();
-      try{
+      try {
         commands[key](param);
-        // speak("Va bene socio")
-      }catch(e){
-        // speak("C'è stato un problemino, zi...")
-        console.error(e)
+      } catch (e) {
+        console.error(e);
       }
+      break;
     }
   }
+  active && speak(sentence);
 };
-function createFile(fileName, content = "") {
-  fs.writeFileSync(SANDBOX_FOLDER + fileName + ".txt", content);
-}
-function deleteFile(fileName) {
-  fs.rmSync(SANDBOX_FOLDER + fileName + ".txt");
-}
