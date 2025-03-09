@@ -16,17 +16,6 @@ const launchOptions: LaunchOptions = {
   ignoreDefaultArgs: ["--mute-audio"],
 };
 
-// const initializeRecorder = () => {
-//   const recordHandler = new RecordHandler();
-//   recordHandler.recordStart();
-//   eventEmitter.on("SPEECH_END",()=>{
-//     recordHandler.recordStop();
-//     recordHandler.playLastSession()
-//     recordHandler.recordStart();
-//   })
-
-// };
-
 /** Function exposed to the puppeteer page used to exhange data with node */
 export const emitEvent: typeof eventEmitter.emit = (name, ...args) =>
   eventEmitter.emit(name, ...args);
