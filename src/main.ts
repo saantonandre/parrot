@@ -38,18 +38,16 @@ export async function main() {
     console[evt.type()](chalk.green(...evt.args()));
   });
   page.exposeFunction("emitEvent", emitEvent);
+  encoderService();
   recognitionService(page);
+  eventEmitter.on("SPEECH_END", () => emitEvent("RECORDER_STOP"));
   inputService(page);
   outputService(page);
-  encoderService();
-  setInterval(() => {
-    emitEvent("RECORDER_STOP");
-  }, 3000);
   return;
 }
 export async function startPuppeteer(url: string) {
   const browser = await puppeteer.launch(launchOptions);
   const page = (await browser.pages())[0];
-  await page.goto("https://localhost");
+  await page.goto(url);
   return page;
 }

@@ -11,7 +11,7 @@ export const outputService = async (page: Page) => {
     addEventListener("message", async (e) => {
       switch (e?.data?.type) {
         case "ENCODER_RESULT": {
-          return playAudio(e?.data?.data);
+          return playAudio(e?.data?.data).catch(e=>console.log(e.message));
         }
       }
     });

@@ -1,18 +1,43 @@
-import { PassThrough } from "stream";
+import { PassThrough, Readable } from "stream";
 import { eventEmitter } from "../events";
 import ffmpeg from "fluent-ffmpeg";
+import { randomUUID } from "crypto";
+import path from "path";
+import fs from "fs";
+
+const SAVE_LOCATION = path.join(path.dirname(__filename), "audios");
 
 export const encoderService = () => {
   eventEmitter.on("RECORDER_RESULT", async (base64) => {
+    const audioPath = writeBase64(base64);
     const buffers: Buffer[] = [];
-    const stream = new PassThrough();
-    ffmpeg({ source: base64 }).pipe(stream, { end: true });
-    stream.on("data", (buf) => buffers.push(buf));
-
-    await new Promise((res) => stream.on("end", res));
+    const outputStream = new PassThrough();
+    ffmpeg()
+      .input(audioPath)
+      .audioFilters([
+        "silenceremove=start_periods=1:start_duration=0:start_threshold=0.02:detection=rms",
+        "aformat=dblp",
+      ])
+      .format("wav")
+      .on("error", (err) => console.error("FFmpeg Error:", err))
+      .pipe(outputStream, { end: true });
+    outputStream.on("data", (buf) => {
+      buffers.push(buf);
+    });
+    await new Promise((res) => outputStream.on("end", res));
     const processedBuffer = Buffer.concat(buffers);
-    const b64 = processedBuffer.toString("base64");
-    const url = processedBuffer.toString("base64url");
-    console.log(b64, url);
+    const data = processedBuffer.toString("base64");
+    eventEmitter.emit(
+      "ENCODER_RESULT",
+      "data:application/octet-stream;base64," + data
+    );
+    fs.rmSync(audioPath)
   });
+};
+
+const writeBase64 = (base64: string) => {
+  const audioPath = path.join(SAVE_LOCATION, `${randomUUID()}.wav`);
+  const rawData = base64.split(";base64,").pop()!;
+  const a = fs.writeFileSync(audioPath, rawData, { encoding: "base64" });
+  return audioPath;
 };
