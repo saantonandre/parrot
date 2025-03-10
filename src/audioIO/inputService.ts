@@ -16,36 +16,48 @@ import { emitEvent } from "../main";
 
 /** Records audio and saves it locally on "RECORD_STOP" event */
 export function inputService(page: Page) {
-  eventEmitter.on("RECORDER_STOP", () =>
-    page.evaluate(() => {
-      postMessage({ type: "RECORDER_STOP" });
-    })
-  );
+  eventEmitter.on("SPEECH_END", (e) => {
+    page.evaluate((e) => {
+      postMessage({ type: "SPEECH_END", data: e });
+    }, e);
+  });
   page.evaluate(async () => {
     // Take the mic stream
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mediaRecorder = new MediaRecorder(stream);
     const audioChunks: Blob[] = [];
-    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+    let recordingStart = Date.now();
+    mediaRecorder.onstart = () => (recordingStart = Date.now());
 
     addEventListener("message", async (e) => {
-      switch (e.data.type) {
-        case "RECORDER_STOP": {
-          return mediaRecorder.stop();
-        }
-      }
-    });
-    mediaRecorder.onstop = () => {
+      const { data, type } = e.data;
+      if (type !== "SPEECH_END") return;
+      // Offset from end time
+
+      const stopPromise = new Promise((res) => (mediaRecorder.onstop = res));
+      mediaRecorder.stop();
+      await stopPromise;
+
+      const speechEndOffset = data;
+      const recordingDuration = Date.now() - recordingStart;
+
       const fileReader = new FileReader();
       const blob = new Blob([...audioChunks]);
       fileReader.readAsDataURL(blob);
-      fileReader.onloadend = () => {
-        const base64data = String(fileReader.result);
-        emitEvent("RECORDER_RESULT", base64data);
-      };
+      await new Promise((res) => (fileReader.onloadend = res));
+      const base64data = String(fileReader.result);
+      emitEvent(
+        "RECORDER_RESULT",
+        base64data,
+        recordingDuration - speechEndOffset
+      );
       audioChunks.length = 0;
       mediaRecorder.start();
-    };
+    });
+
     mediaRecorder.start();
   });
 }

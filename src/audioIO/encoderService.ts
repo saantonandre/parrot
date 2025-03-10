@@ -8,16 +8,13 @@ import fs from "fs";
 const SAVE_LOCATION = path.join(path.dirname(__filename), "audios");
 
 export const encoderService = () => {
-  eventEmitter.on("RECORDER_RESULT", async (base64) => {
+  eventEmitter.on("RECORDER_RESULT", async (base64,speechStartMs) => {
     const audioPath = writeBase64(base64);
     const buffers: Buffer[] = [];
     const outputStream = new PassThrough();
     ffmpeg()
       .input(audioPath)
-      .audioFilters([
-        "silenceremove=start_periods=1:start_duration=0:start_threshold=0.02:detection=rms",
-        "aformat=dblp",
-      ])
+      .setStartTime(speechStartMs/1000)
       .format("wav")
       .on("error", (err) => console.error("FFmpeg Error:", err))
       .pipe(outputStream, { end: true });
@@ -31,7 +28,7 @@ export const encoderService = () => {
       "ENCODER_RESULT",
       "data:application/octet-stream;base64," + data
     );
-    fs.rmSync(audioPath)
+    fs.rmSync(audioPath);
   });
 };
 

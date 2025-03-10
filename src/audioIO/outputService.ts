@@ -9,11 +9,9 @@ export const outputService = async (page: Page) => {
   });
   page.evaluate(async () => {
     addEventListener("message", async (e) => {
-      switch (e?.data?.type) {
-        case "ENCODER_RESULT": {
-          return playAudio(e?.data?.data).catch(e=>console.log(e.message));
-        }
-      }
+      const {data,type} = e.data
+      if (type !== "ENCODER_RESULT") return;
+      playAudio(data).catch((e) => console.log(e.message));
     });
     const audioContext = new AudioContext();
     const playAudio = async (base64: string) => {

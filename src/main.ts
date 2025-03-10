@@ -29,7 +29,6 @@ export async function main() {
   page.exposeFunction("emitEvent", emitEvent);
   encoderService();
   recognitionService(page);
-  eventEmitter.on("SPEECH_END", () => emitEvent("RECORDER_STOP"));
   inputService(page);
   outputService(page);
   return;
