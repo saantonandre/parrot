@@ -22,7 +22,7 @@ export const launchServer = async () => {
     console.log("HTTPS server running on port 443");
   });
   app.get("/", (_req, res) => {
-    res.send("");
+    res.send("hello");
   });
   return "https://localhost";
 };

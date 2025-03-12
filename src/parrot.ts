@@ -8,8 +8,11 @@ export const parrot = async () => {
   const recognition = new webkitSpeechRecognition();
   recognition.continuous = false;
   // Handle speech recognition
-  const TOLERANCE_MS = 200;
-  recognition.onspeechstart = () => (speechStart = Date.now() - TOLERANCE_MS);
+  const TOLERANCE_MS = 500;
+  recognition.onspeechstart = () => {
+    console.log("speechstart");
+    speechStart = Date.now() - TOLERANCE_MS;
+  };
   recognition.onend = recognition.start; // Restart on abrupt ends
   // handle recorder
   const audioChunks: Blob[] = [];
@@ -20,21 +23,25 @@ export const parrot = async () => {
     const value = e.results[0][0].transcript.trim();
     console.log(`[${e.results[0][0].confidence.toFixed(2)}]: ${value}`);
     const stopPromise = new Promise((res) => (mediaRecorder.onstop = res));
+    await new Promise((res) => setTimeout(res, TOLERANCE_MS));
+    const speechEndOffset = Date.now() - speechStart;
     mediaRecorder.stop();
     await stopPromise;
+    mediaRecorder.start();
     // Audio trimming
-    const speechEndOffset = Date.now() - speechStart;
     const arrayBuffer = await new Blob([...audioChunks]).arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    const sampleRate = audioBuffer.sampleRate;
     const startSample = Math.max(
-      audioBuffer.length - (speechEndOffset / 1000) * sampleRate,
+      audioBuffer.duration * audioBuffer.sampleRate -
+        (speechEndOffset / 1000) * audioBuffer.sampleRate,
       0
     );
+    // console.log("speechEndOffset s", speechEndOffset / 1000);
+    // console.log("audioDuration s", audioBuffer.duration);
     const trimmedBuffer = audioContext.createBuffer(
       audioBuffer.numberOfChannels,
-      sampleRate,
-      sampleRate
+      (speechEndOffset / 1000) * audioBuffer.sampleRate,
+      audioBuffer.sampleRate
     );
     for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
       trimmedBuffer.copyToChannel(
@@ -48,7 +55,6 @@ export const parrot = async () => {
     source.start();
 
     audioChunks.length = 0;
-    mediaRecorder.start();
   };
   // Start services
   recognition.start();
