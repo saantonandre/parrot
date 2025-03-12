@@ -10,7 +10,7 @@ export const parrot = async () => {
   // Handle speech recognition
   const TOLERANCE_MS = 500;
   recognition.onspeechstart = () => {
-    console.log("speechstart");
+    // console.log("speechstart");
     speechStart = Date.now() - TOLERANCE_MS;
   };
   recognition.onend = recognition.start; // Restart on abrupt ends
